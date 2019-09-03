@@ -29,14 +29,13 @@ find_package(GTest CONFIG REQUIRED)
 add_library(
   ${PROJECT_NAME}
   STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
-  sources/Json.cpp
-)
+        sources/Json.cpp
+        sources/JsonParser.cpp sources/Utils.cpp)
 
 add_executable(
   tests
-  ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.cpp
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/TestJson.cpp
+        tests/TestJsonObject.cpp tests/TestJsonArray.cpp)
 
 target_include_directories(
   ${PROJECT_NAME}

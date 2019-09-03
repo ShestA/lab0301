@@ -14,19 +14,63 @@ public:
     using ArrayType = std::vector<std::any>;
 
     // Конструктор из строки, содержащей Json-данные.
-    explicit Json(const std::string &s);
+    explicit Json(const std::string &string);
+
+    explicit Json(const ObjectType& object):
+        objectData(new ObjectType(object))
+    {}
+
+    explicit Json(const ArrayType& object):
+        arrayData(new ArrayType(object))
+    {}
 
     // Пустой конструктор
     Json() = default;
 
+    Json(const Json &json)
+    {
+        *this = json;
+    }
+
+    Json(Json &&json) noexcept
+    {
+        *this = std::forward<Json>(json);
+    }
+
+    Json &operator=(const Json &json)
+    {
+        this->~Json();
+
+        if (json.objectData) {
+            this->objectData = new ObjectType{*json.objectData};
+        }
+        if (json.arrayData) {
+            this->arrayData = new ArrayType{*json.arrayData};
+        }
+
+        return *this;
+    }
+
+    Json &operator=(Json &&json) noexcept
+    {
+        this->~Json();
+
+        this->objectData = json.objectData;
+        this->arrayData = json.arrayData;
+        json.objectData = nullptr;
+        json.arrayData = nullptr;
+
+        return *this;
+    }
+
     // Добавить чето в словарик
-    void addObjectKey(const std::string &key)
+    void addToObjectKey(const std::string &key, const std::any &value)
     {
         if (!objectData) {
             throw JsonException("");
         }
 
-        objectData->insert({key, {}});
+        (*objectData)[key] = value;
     }
 
     // Добавить чето в массив
@@ -37,6 +81,15 @@ public:
         }
 
         arrayData->push_back(value);
+    }
+
+    void addNullToArray()
+    {
+        if (!arrayData) {
+            throw JsonException("");
+        }
+
+        arrayData->emplace_back();
     }
 
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-массив. Иначе false.
