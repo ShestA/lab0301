@@ -40,8 +40,31 @@ public:
     friend Json;
 
 private:
+    static void jsonConvertPointers(Json *json)
+    {
+        if (json->is_array()) {
+            for (size_t i = 0; i < json->getSize(); i++) {
+                if (std::any &value = (*json)[i]; value.type() == typeid(Json *)) {
+                    Json &nested = *std::any_cast<Json *>(value);
+                    (*json)[i] = std::move(nested);
+                }
+            }
+        } else if (json->is_object()) {
+            for (const std::string &key : json->getKeys()) {
+                try {
+                    Json &nested = *std::any_cast<Json *>((*json)[key]);
+                    (*json)[key] = std::move(nested);
+                } catch (std::bad_any_cast &) {
+
+                }
+            }
+        }
+    }
+
     void finishCurrentJson()
     {
+        jsonConvertPointers(jsonStack.top());
+
         jsonStack.pop();
         currentType = NoneParsing;
 

@@ -16,11 +16,13 @@ public:
     // Конструктор из строки, содержащей Json-данные.
     explicit Json(const std::string &string);
 
-    explicit Json(const ObjectType& object):
+    explicit Json(const ObjectType &object)
+        :
         objectData(new ObjectType(object))
     {}
 
-    explicit Json(const ArrayType& object):
+    explicit Json(const ArrayType &object)
+        :
         arrayData(new ArrayType(object))
     {}
 
@@ -42,10 +44,10 @@ public:
         this->~Json();
 
         if (json.objectData) {
-            this->objectData = new ObjectType{*json.objectData};
+            this->objectData = new ObjectType(*json.objectData);
         }
         if (json.arrayData) {
-            this->arrayData = new ArrayType{*json.arrayData};
+            this->arrayData = new ArrayType(*json.arrayData);
         }
 
         return *this;
@@ -83,13 +85,19 @@ public:
         arrayData->push_back(value);
     }
 
-    void addNullToArray()
+    [[nodiscard]] std::vector<std::string> getKeys() const
     {
-        if (!arrayData) {
+        if (!objectData) {
             throw JsonException("");
         }
 
-        arrayData->emplace_back();
+        std::vector<std::string> result;
+        result.reserve(objectData->size());
+        for (const auto &pair: *objectData) {
+            result.push_back(pair.first);
+        }
+
+        return result;
     }
 
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-массив. Иначе false.
@@ -110,7 +118,6 @@ public:
             return 0;
         }
     }
-
 
     // Метод возвращает значение по ключу key, если экземпляр является JSON-объектом.
     // Значение может иметь один из следующих типов: Json, std::string, double, bool или быть пустым.
