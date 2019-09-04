@@ -33,7 +33,7 @@ Json &Json::operator=(Json &&json) noexcept
 void Json::addToObjectKey(const std::string &key, const std::any &value)
 {
     if (!objectData) {
-        throw JsonException("");
+        throw JsonUnexpectedType("Expected JSON object");
     }
 
     (*objectData)[key] = value;
@@ -42,7 +42,7 @@ void Json::addToObjectKey(const std::string &key, const std::any &value)
 void Json::addToArray(const std::any &value)
 {
     if (!arrayData) {
-        throw JsonException("");
+        throw JsonUnexpectedType("Expected JSON array");
     }
 
     arrayData->push_back(value);
@@ -96,11 +96,11 @@ Json::~Json()
 std::any &Json::operator[](const std::string &key)
 {
     if (!objectData) {
-        throw JsonException("");
+        throw JsonUnexpectedType("Expected JSON object");
     }
 
     if (objectData->find(key) == objectData->cend()) {
-        throw JsonException("");
+        throw JsonUnexpectedKey("Expected JSON object key: " + key);
     }
 
     return (*objectData)[key];
@@ -109,11 +109,11 @@ std::any &Json::operator[](const std::string &key)
 std::any &Json::operator[](int index)
 {
     if (!arrayData) {
-        throw JsonException("");
+        throw JsonUnexpectedType("Expected JSON array");
     }
 
     if (arrayData->size() <= static_cast<size_t>(index)) {
-        throw JsonException("");
+        throw JsonUnexpectedKey("Expected JSON array index: " + std::to_string(index));
     }
 
     return (*arrayData)[index];

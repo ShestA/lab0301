@@ -5,11 +5,41 @@
 class JsonException : public std::runtime_error
 {
 public:
-    explicit JsonException(const std::string &arg)
-        : runtime_error(arg)
-    {}
+    using std::runtime_error::runtime_error;
+};
 
-    explicit JsonException(const char *string)
-        : runtime_error(string)
-    {}
+class JsonUnexpectedType : public JsonException
+{
+public:
+    using JsonException::JsonException;
+};
+
+class JsonUnexpectedKey : public JsonException
+{
+public:
+    using JsonException::JsonException;
+};
+
+class JsonParseException : public JsonException
+{
+public:
+    using JsonException::JsonException;
+};
+
+class JsonParseInternalError : public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
+};
+
+class JsonParseUnexpectedEof : public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
+};
+
+class JsonParseUnexpectedChar : public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
 };

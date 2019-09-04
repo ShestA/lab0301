@@ -1,7 +1,8 @@
 #include "JsonParser.h"
 #include "Utils.h"
 
-JsonParser::JsonParser(const std::string &string) {
+JsonParser::JsonParser(const std::string &string)
+{
     for (char now : string) {       // Основной цикл
         currentChar = now;
 
@@ -45,7 +46,7 @@ JsonParser::JsonParser(const std::string &string) {
     }
 
     if (!jsonEnded) {
-        throw JsonException("Unexpected end of string");
+        throw JsonParseUnexpectedEof("Unexpected end of json data");
     }
 }
 
@@ -68,7 +69,7 @@ void JsonParser::finishCurrentJson()
 bool JsonParser::jsonEndedBehavior()
 {
     if (!Utils::isCharSpace(currentChar)) {
-        throw JsonException("");
+        throw JsonParseUnexpectedChar("Expected end of json data");
     }
 
     return true;
@@ -83,7 +84,7 @@ bool JsonParser::jsonExceptedDividerBehavior()
 
         finishCurrentJson();
     } else if (!Utils::isCharSpace(currentChar)) {
-        throw JsonException(std::string("Expected ',', got '") + currentChar + "'");
+        throw JsonParseUnexpectedChar(std::string("Expected ',', got '") + currentChar + "'");
     }
 
     return true;
@@ -94,7 +95,7 @@ bool JsonParser::jsonExceptedObjectDividerBehavior()
     if (currentChar == ':') {
         expectedObjectDivider = false;
     } else if (!Utils::isCharSpace(currentChar)) {
-        throw JsonException(std::string("Expected ':', got '") + currentChar + "'");
+        throw JsonParseUnexpectedChar(std::string("Expected ':', got '") + currentChar + "'");
     }
 
     return true;
@@ -125,7 +126,7 @@ bool JsonParser::jsonNoJsonBehavior()
 
     Json *created = createNewJsonIfCan();
     if (!created) {
-        throw JsonException("Expected begin of object or array");
+        throw JsonParseUnexpectedChar(std::string("Expected begin of object or array, got '") + currentChar + "'");
     }
     result = created;
 
@@ -199,7 +200,9 @@ bool JsonParser::continueParsingValueIfCan(const std::function<void(const std::a
             clearValue(true);
         } else if (Utils::isCharSpace(currentChar) || currentChar == ',') {
             // Завершение чтения ключевого слова, однако ключевое слово не распознано
-            throw JsonException("");
+            throw JsonParseUnexpectedChar(
+                std::string("Unexpected keyword. Expected: true, false, null. Got: ") + currentValue
+            );
         } else {
             // Продолжение чтения ключевого слова
             currentValue += currentChar;
@@ -230,7 +233,7 @@ bool JsonParser::jsonFillArrayBehavior()
             return true;
         }
 
-        throw JsonException("");        // something undefined
+        throw JsonParseInternalError(std::string("Attempt to fill array with unexpected character ") + currentChar);
     }
 
     bool parsingResult = continueParsingValueIfCan(
@@ -244,7 +247,7 @@ bool JsonParser::jsonFillArrayBehavior()
         return true;            // ok, continue
     }
 
-    throw JsonException("Internal error");
+    throw JsonParseInternalError("Unexpected error while filling array");
 }
 
 bool JsonParser::jsonFillObjectBehavior()
@@ -281,10 +284,10 @@ bool JsonParser::jsonFillObjectBehavior()
                 currentType = StringKey;
                 currentValue.clear();
             } else {
-                throw JsonException("Expected quote");
+                throw JsonParseUnexpectedChar(std::string("Expected quote, got '") + currentChar + "'");
             }
         } else {
-            throw JsonException("Internal error");
+            throw JsonParseInternalError("Expected string at key");
         }
 
         return true;
@@ -306,7 +309,7 @@ bool JsonParser::jsonFillObjectBehavior()
             return true;
         }
 
-        throw JsonException("");        // something undefined
+        throw JsonParseInternalError(std::string("Attempt to fill object with unexpected character ") + currentChar);
     }
 
     bool parsingResult = continueParsingValueIfCan(
@@ -324,5 +327,5 @@ bool JsonParser::jsonFillObjectBehavior()
         return true;
     }
 
-    throw JsonException("Internal error");
+    throw JsonParseInternalError("Unexpected error while filling object");
 }
