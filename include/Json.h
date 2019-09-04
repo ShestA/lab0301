@@ -10,8 +10,8 @@
 class Json
 {
 public:
-    using ObjectType = std::unordered_map<std::string, std::any>;
-    using ArrayType = std::vector<std::any>;
+    using ObjectType = std::unordered_map<std::string, std::any>;       // Тип сериализованного json-объекта
+    using ArrayType = std::vector<std::any>;                            // Тип сериализованного json-массива
 
     // Конструктор из строки, содержащей Json-данные.
     explicit Json(const std::string &string);
@@ -55,6 +55,7 @@ public:
 
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-массив. Иначе false.
     [[nodiscard]] bool is_array() const;
+
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-объект. Иначе false.
     [[nodiscard]] bool is_object() const;
 
@@ -64,6 +65,7 @@ public:
         return objectData == nullptr && arrayData == nullptr;
     }
 
+    // Метод возвращает размер json множества (как массива, так и объекта)
     [[nodiscard]] size_t getSize() const;
 
     // Метод возвращает значение по ключу key, если экземпляр является JSON-объектом.

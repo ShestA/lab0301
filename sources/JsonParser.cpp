@@ -165,43 +165,51 @@ bool JsonParser::continueParsingValueIfCan(const std::function<void(const std::a
 {
     if (currentType == StringValue) {
         if (currentChar == stringOpenQuote) {
+            // Завершение чтения строки
             addFunction(currentValue);
             clearValue(true);
         } else {
+            // Продолжение чтения строки
             currentValue += currentChar;
         }
     } else if (currentType == Number) {
         if (Utils::isCharSpace(currentChar) || currentChar == ',') {
+            // Завершение чтения числа
             double number = Utils::stringToNumber(currentValue);
 
             addFunction(number);
             clearValue(currentChar != ',');
         } else if ((currentChar == '}' && jsonStack.top()->is_object())
             || (currentChar == ']' && jsonStack.top()->is_array())) {
-
+            // Завершение чтения числа, причем вместе с завершением чтения контейнера
             double number = Utils::stringToNumber(currentValue);
 
             addFunction(number);
             finishCurrentJson();
         } else {
+            // Продолжение чтения числа
             currentValue += currentChar;
         }
     } else if (currentType == Boolean) {
         if ((currentValue == "tru" || currentValue == "fals") && currentChar == 'e') {
+            // Завершение чтения ключевого слова
             bool value = currentValue == "tru";
 
             addFunction(value);
             clearValue(true);
         } else if (Utils::isCharSpace(currentChar) || currentChar == ',') {
+            // Завершение чтения ключевого слова, однако ключевое слово не распознано
             throw JsonException("");
         } else {
+            // Продолжение чтения ключевого слова
             currentValue += currentChar;
         }
     } else {
+        // Не смог продолжить читать
         return false;
     }
 
-    return true;
+    return true;        // ok, continue
 }
 
 bool JsonParser::jsonFillArrayBehavior()
@@ -242,8 +250,11 @@ bool JsonParser::jsonFillArrayBehavior()
 bool JsonParser::jsonFillObjectBehavior()
 {
     if (isObjectKey) {
+        // Ожидание ключа
         if (currentType == StringKey) {
+            // Уже читаем ключ
             if (currentChar == stringOpenQuote) {
+                // Закончить читать ключ
                 jsonStack.top()->addToObjectKey(currentValue, {});
                 currentKey = currentValue;
 
@@ -253,8 +264,11 @@ bool JsonParser::jsonFillObjectBehavior()
                 return true;
             }
 
+            // Продолжить чтение ключа
             currentValue += currentChar;
         } else if (currentType == NoneParsing) {
+            // Начать сериализацию ключа
+
             if (Utils::isCharSpace(currentChar)) {
                 return true;
             }
@@ -262,7 +276,6 @@ bool JsonParser::jsonFillObjectBehavior()
                 finishCurrentJson();
                 return true;
             }
-
             if (Utils::isCharQuote(currentChar)) {
                 stringOpenQuote = currentChar;
                 currentType = StringKey;

@@ -66,7 +66,7 @@ private:
     // Очистить текущее считываемое значение
     void clearValue(bool willBeExpectedDivider);
 
-    // Продолжить считывание текущего значения, если возможно
+    // Продолжить (или завершить) считывание текущего значения, если возможно
     // Вернет true, если удалось. Иначе - false
     bool continueParsingValueIfCan(const std::function<void(const std::any &)> &addFunction);
 
