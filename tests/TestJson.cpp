@@ -1,5 +1,3 @@
-// Copyright 2018 Your Name <your_email>
-
 #include <gtest/gtest.h>
 
 #include "Json.h"
@@ -15,7 +13,7 @@ TEST(Json, NullJson)
 
 TEST(Json, ExampleJson)
 {
-    Json json{R"(
+    Json object{R"(
         {
             "lastname" : "Ivanov",
             "firstname" : "Ivan",
@@ -30,5 +28,17 @@ TEST(Json, ExampleJson)
             }
         }
     )"};
+
+    EXPECT_EQ(std::any_cast<std::string>(object["lastname"]), "Ivanov");
+    EXPECT_EQ(std::any_cast<bool>(object["islegal"]), false);
+    EXPECT_EQ(std::any_cast<double>(object["age"]), 25);
+
+    Json &marks = *std::any_cast<Json *>(object["marks"]);
+    EXPECT_EQ(std::any_cast<double>(marks[0]), 4);
+    EXPECT_EQ(std::any_cast<double>(marks[1]), 5);
+
+    Json &address = *std::any_cast<Json *>(object["address"]);
+    EXPECT_EQ(std::any_cast<std::string>(address["city"]), "Moscow");
+    EXPECT_EQ(std::any_cast<std::string>(address["street"]), "Vozdvijenka");
 }
 

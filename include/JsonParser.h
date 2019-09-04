@@ -2,31 +2,25 @@
 
 #include <stack>
 #include <functional>
-#include "Utils.h"
 #include "Json.h"
 
 class JsonParser
 {
 public:
-    enum ContainerType
-    {
-        Object,
-        Array,
-        NoneContainer,
-    };
-
+    // Типы, возможные для сериализации (исключая контейнерные)
     enum ParsingType
     {
         StringKey,
         StringValue,
-        ObjectKey,
         Number,
         Boolean,
         NoneParsing,
     };
 
+    // Конструктор от строки
     explicit JsonParser(const std::string &string);
 
+    // Геттер для результата
     [[nodiscard]] const Json &getResult() const
     {
         return *result;
@@ -40,270 +34,49 @@ public:
     friend Json;
 
 private:
-    void finishCurrentJson()
-    {
-        jsonStack.pop();
-        currentType = NoneParsing;
+    // Завершить верхний по стеку json объект.
+    // Если стек будет пусть - установить полное завершение сериализации
+    // При наличии в стеке json-объекта или json-массива - выставить необходимые флаги
+    void finishCurrentJson();
 
-        if (jsonStack.empty()) {
-            jsonEnded = true;
-        } else {
-            if (jsonStack.top()->is_object()) {
-                isObjectKey = true;
-            }
+    // Поведение при гарантировано закончившимся JSON'е
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonEndedBehavior();
 
-            expectedDivider = true;
-        }
-    }
+    // Поведение при ожидании разделителя ','
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonExceptedDividerBehavior();
 
-    bool jsonEndedBehavior()
-    {
-        if (!Utils::isCharSpace(currentChar)) {
-            throw JsonException("");
-        }
+    // Поведение при ожидании раздалителя ключа от значения ':'
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonExceptedObjectDividerBehavior();
 
-        return true;
-    }
+    // Создать новый контейнер, если это возможно
+    // Вернет указатель на созданный (в куче) JSON, если удалось. Иначе - nullptr
+    Json *createNewJsonIfCan();
 
-    bool jsonExceptedDividerBehavior()
-    {
-        if (currentChar == ',') {
-            expectedDivider = false;
-        } else if ((currentChar == '}' && jsonStack.top()->is_object())
-            || (currentChar == ']' && jsonStack.top()->is_array())) {
+    // Поведение при отсутствии контейнеров
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonNoJsonBehavior();
 
-            finishCurrentJson();
-        } else if (!Utils::isCharSpace(currentChar)) {
-            throw JsonException(std::string("Expected ',', got '") + currentChar + "'");
-        }
+    // Начать сериализацию нового значения, если возможно
+    // Вернет true, если удалось. Иначе - false
+    bool parseNewValueIfCan();
 
-        return true;
-    }
+    // Очистить текущее считываемое значение
+    void clearValue(bool willBeExpectedDivider);
 
-    bool jsonExceptedObjectDividerBehavior()
-    {
-        if (currentChar == ':') {
-            expectedObjectDivider = false;
-        } else if (!Utils::isCharSpace(currentChar)) {
-            throw JsonException(std::string("Expected ':', got '") + currentChar + "'");
-        }
+    // Продолжить считывание текущего значения, если возможно
+    // Вернет true, если удалось. Иначе - false
+    bool continueParsingValueIfCan(const std::function<void(const std::any &)> &addFunction);
 
-        return true;
-    }
+    // Поведение при наличии json-массива на вершине стека
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonFillArrayBehavior();
 
-    Json *createNewJsonIfCan()
-    {
-        if (currentChar == '{') {
-            // Инициализация JSON объекта
-            isObjectKey = true;
-            jsonStack.push(new Json{Json::ObjectType{}});
-        } else if (currentChar == '[') {
-            // Инициализация JSON массива
-            jsonStack.push(new Json{Json::ArrayType{}});
-        } else {
-            // Не смог
-            return nullptr;
-        }
-
-        return jsonStack.top();
-    }
-
-    bool jsonNoJsonBehavior()
-    {
-        if (Utils::isCharSpace(currentChar)) {
-            return true;            // ok, continue
-        }
-
-        Json *created = createNewJsonIfCan();
-        if (!created) {
-            throw JsonException("Expected begin of object or array");
-        }
-        result = created;
-
-        return false;
-    }
-
-    bool parseNewValueIfCan()
-    {
-        if (Utils::isCharQuote(currentChar)) {
-            // Начало строки
-            currentType = StringValue;
-            stringOpenQuote = currentChar;
-            currentValue.clear();
-        } else if (Utils::isCharNumber(currentChar)) {
-            // Начало числа
-            currentType = Number;
-            currentValue = currentChar;
-        } else if (currentChar == 't' || currentChar == 'f') {
-            // Начало bool значения
-            currentType = Boolean;
-            currentValue = currentChar;
-        } else {
-            return false;
-        }
-
-        return true;
-    }
-
-    void clearValue(bool willBeExpectedDivider)
-    {
-        stringOpenQuote = '\0';
-        currentType = NoneParsing;
-        expectedDivider = willBeExpectedDivider;
-    }
-
-    bool continueParsingValueIfCan(const std::function<void(const std::any &)> &addFunction)
-    {
-        if (currentType == StringValue) {
-            if (currentChar == stringOpenQuote) {
-                addFunction(currentValue);
-                clearValue(true);
-            } else {
-                currentValue += currentChar;
-            }
-        } else if (currentType == Number) {
-            if (Utils::isCharSpace(currentChar) || currentChar == ',') {
-                double number = stod(currentValue);
-
-                addFunction(number);
-                clearValue(currentChar != ',');
-            } else if ((currentChar == '}' && jsonStack.top()->is_object())
-                || (currentChar == ']' && jsonStack.top()->is_array())) {
-
-                double number = stod(currentValue);
-
-                addFunction(number);
-                finishCurrentJson();
-            } else {
-                currentValue += currentChar;
-            }
-        } else if (currentType == Boolean) {
-            if ((currentValue == "tru" || currentValue == "fals") && currentChar == 'e') {
-                bool value = currentValue == "tru";
-
-                addFunction(value);
-                clearValue(true);
-            } else if (Utils::isCharSpace(currentChar) || currentChar == ',') {
-                throw JsonException("");
-            } else {
-                currentValue += currentChar;
-            }
-        } else {
-            return false;
-        }
-
-        return true;
-    }
-
-    bool jsonFillArrayBehavior()
-    {
-        if (currentType == NoneParsing) {
-            if (Utils::isCharSpace(currentChar)) {
-                return true;            // continue
-            }
-            if (parseNewValueIfCan()) {
-                return true;            // ok, continue
-            }
-            if (Json *prevContainer = this->jsonStack.top(), *created = createNewJsonIfCan(); created) {
-                prevContainer->addToArray(created);
-                return true;            // ok, continue
-            }
-            if (currentChar == ']') {
-                finishCurrentJson();
-                return true;
-            }
-
-            throw JsonException("");        // something undefined
-        }
-
-        bool parsingResult = continueParsingValueIfCan(
-            [this](const std::any &value) {
-                Json &json = *this->jsonStack.top();
-                json.addToArray(value);
-            }
-        );
-
-        if (parsingResult) {
-            return true;            // ok, continue
-        }
-
-        throw JsonException("Internal error");
-    }
-
-    bool jsonFillObjectBehavior()
-    {
-        if (isObjectKey) {
-            if (currentType == StringKey) {
-                if (currentChar == stringOpenQuote) {
-                    jsonStack.top()->addToObjectKey(currentValue, {});
-                    currentKey = currentValue;
-
-                    clearValue(false);
-                    isObjectKey = false;
-                    expectedObjectDivider = true;
-                    return true;
-                }
-
-                currentValue += currentChar;
-            } else if (currentType == NoneParsing) {
-                if (Utils::isCharSpace(currentChar)) {
-                    return true;
-                }
-                if (currentChar == '}') {
-                    finishCurrentJson();
-                    return true;
-                }
-
-                if (Utils::isCharQuote(currentChar)) {
-                    stringOpenQuote = currentChar;
-                    currentType = StringKey;
-                    currentValue.clear();
-                } else {
-                    throw JsonException("Expected quote");
-                }
-            } else {
-                throw JsonException("Internal error");
-            }
-
-            return true;
-        }
-
-        if (currentType == NoneParsing) {
-            if (Utils::isCharSpace(currentChar)) {
-                return true;            // continue
-            }
-            if (parseNewValueIfCan()) {
-                return true;            // ok, continue
-            }
-            if (Json *prevContainer = this->jsonStack.top(), *created = createNewJsonIfCan(); created) {
-                prevContainer->addToObjectKey(currentKey, created);
-                return true;            // ok, continue
-            }
-            if (currentChar == '}') {
-                finishCurrentJson();
-                return true;
-            }
-
-            throw JsonException("");        // something undefined
-        }
-
-        bool parsingResult = continueParsingValueIfCan(
-            [this](const std::any &value) {
-                Json &json = *this->jsonStack.top();
-                json.addToObjectKey(currentKey, value);
-            }
-        );
-
-        if (parsingResult) {
-            if (currentType == NoneParsing) {
-                isObjectKey = true;
-                currentKey.clear();
-            }
-            return true;
-        }
-
-        throw JsonException("Internal error");
-    }
+    // Поведение при наличии json-объекта на вершине стека
+    // Вернет true, если необходимо перейти к следующий итерации основного цикла. Иначе - false
+    bool jsonFillObjectBehavior();
 
     ParsingType currentType = NoneParsing;          // Тип, который парсим в данный момент
     bool isObjectKey = false;                       // Является ли текущий парсинг - парсингом ключа объекта

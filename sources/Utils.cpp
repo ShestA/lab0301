@@ -18,3 +18,8 @@ bool Utils::isCharNumber(char c)
 {
     return c >= '0' && c <= '9';
 }
+
+double Utils::stringToNumber(const std::string &string)
+{
+    return stod(string);
+}

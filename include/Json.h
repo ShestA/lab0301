@@ -16,101 +16,55 @@ public:
     // Конструктор из строки, содержащей Json-данные.
     explicit Json(const std::string &string);
 
-    explicit Json(const ObjectType& object):
-        objectData(new ObjectType(object))
+    // Конструктор из сериализованного объекта
+    explicit Json(const ObjectType &object)
+        : objectData(new ObjectType(object))
     {}
 
-    explicit Json(const ArrayType& object):
-        arrayData(new ArrayType(object))
+    // Конструктор из сериализованного массива
+    explicit Json(const ArrayType &object)
+        : arrayData(new ArrayType(object))
     {}
 
     // Пустой конструктор
     Json() = default;
 
+    // Конструктор копирования
     Json(const Json &json)
     {
         *this = json;
     }
 
+    // Конструктор перемещения
     Json(Json &&json) noexcept
     {
         *this = std::forward<Json>(json);
     }
 
-    Json &operator=(const Json &json)
-    {
-        this->~Json();
+    // Копирующее присваивание
+    Json &operator=(const Json &json);
 
-        if (json.objectData) {
-            this->objectData = new ObjectType{*json.objectData};
-        }
-        if (json.arrayData) {
-            this->arrayData = new ArrayType{*json.arrayData};
-        }
+    // Перемещающее присваивание
+    Json &operator=(Json &&json) noexcept;
 
-        return *this;
-    }
+    // Добавить в словарь ключ, значение
+    void addToObjectKey(const std::string &key, const std::any &value);
 
-    Json &operator=(Json &&json) noexcept
-    {
-        this->~Json();
-
-        this->objectData = json.objectData;
-        this->arrayData = json.arrayData;
-        json.objectData = nullptr;
-        json.arrayData = nullptr;
-
-        return *this;
-    }
-
-    // Добавить чето в словарик
-    void addToObjectKey(const std::string &key, const std::any &value)
-    {
-        if (!objectData) {
-            throw JsonException("");
-        }
-
-        (*objectData)[key] = value;
-    }
-
-    // Добавить чето в массив
-    void addToArray(const std::any &value)
-    {
-        if (!arrayData) {
-            throw JsonException("");
-        }
-
-        arrayData->push_back(value);
-    }
-
-    void addNullToArray()
-    {
-        if (!arrayData) {
-            throw JsonException("");
-        }
-
-        arrayData->emplace_back();
-    }
+    // Добавить значение в массив
+    void addToArray(const std::any &value);
 
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-массив. Иначе false.
-    bool is_array() const;
+    [[nodiscard]] bool is_array() const;
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-объект. Иначе false.
-    bool is_object() const;
+    [[nodiscard]] bool is_object() const;
 
-    // TODO написать описание
-    bool is_null() const;
-
-    size_t getSize() const
+    // Метод возвращает true, если данный экземпляр не содержит в себе не объект, не массив.
+    [[nodiscard]] bool is_null() const
     {
-        if (arrayData) {
-            return arrayData->size();
-        } else if (objectData) {
-            return objectData->size();
-        } else {
-            return 0;
-        }
+        return objectData == nullptr && arrayData == nullptr;
     }
 
+    [[nodiscard]] size_t getSize() const;
 
     // Метод возвращает значение по ключу key, если экземпляр является JSON-объектом.
     // Значение может иметь один из следующих типов: Json, std::string, double, bool или быть пустым.
@@ -123,7 +77,10 @@ public:
     std::any &operator[](int index);
 
     // Метод возвращает объект класса Json из строки, содержащей Json-данные.
-    static Json parse(const std::string &s);
+    static Json parse(const std::string &string)
+    {
+        return Json(string);
+    }
 
     // Метод возвращает объекта класса Json из файла, содержащего Json-данные в текстовом формате.
     static Json parseFile(const std::string &path_to_file);
