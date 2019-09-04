@@ -39,7 +39,7 @@ TEST(JsonObject, NestedObject)
     EXPECT_EQ(json.is_array(), false);
     EXPECT_EQ(json.is_null(), false);
 
-    Json nested = std::any_cast<Json>(json["key"]);
+    Json &nested = *std::any_cast<Json *>(json["key"]);
     EXPECT_EQ(nested.getSize(), 1);
     EXPECT_EQ(nested.is_object(), true);
     EXPECT_EQ(nested.is_array(), false);
@@ -56,7 +56,7 @@ TEST(JsonObject, NestedWithArray)
     EXPECT_EQ(json.is_array(), false);
     EXPECT_EQ(json.is_null(), false);
 
-    Json nested = std::any_cast<Json>(json["key"]);
+    Json &nested = *std::any_cast<Json *>(json["key"]);
     EXPECT_EQ(nested.getSize(), 3);
     EXPECT_EQ(nested.is_object(), false);
     EXPECT_EQ(nested.is_array(), true);
@@ -73,7 +73,7 @@ TEST(JsonObject, NestedWithArrayWithValues)
     EXPECT_EQ(json.is_array(), false);
     EXPECT_EQ(json.is_null(), false);
 
-    Json nested = std::any_cast<Json>(json["key"]);
+    Json &nested = *std::any_cast<Json *>(json["key"]);
     EXPECT_EQ(nested.getSize(), 3);
     EXPECT_EQ(nested.is_object(), false);
     EXPECT_EQ(nested.is_array(), true);
@@ -84,23 +84,4 @@ TEST(JsonObject, NestedWithArrayWithValues)
     EXPECT_EQ(std::any_cast<double>(nested[2]), 3);
 
     EXPECT_EQ(std::any_cast<bool>(json["key2"]), true);
-}
-
-TEST(JsonObject, SomeHacks)
-{
-    Json json{R"({ "::,," : [1,2, ' , , "'] })"};
-    EXPECT_EQ(json.getSize(), 1);
-    EXPECT_EQ(json.is_object(), true);
-    EXPECT_EQ(json.is_array(), false);
-    EXPECT_EQ(json.is_null(), false);
-
-    Json nested = std::any_cast<Json>(json["::,,"]);
-    EXPECT_EQ(nested.getSize(), 3);
-    EXPECT_EQ(nested.is_object(), false);
-    EXPECT_EQ(nested.is_array(), true);
-    EXPECT_EQ(nested.is_null(), false);
-
-    EXPECT_EQ(std::any_cast<double>(nested[0]), 1);
-    EXPECT_EQ(std::any_cast<double>(nested[1]), 2);
-    EXPECT_EQ(std::any_cast<std::string>(nested[2]), " , , \"");
 }
