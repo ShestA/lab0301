@@ -4,6 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_COVERAGE "Build coverage" OFF)
+option(BUILD_DEMO "Build 2nd task (demo app)" OFF)
+option(BUILD_BROKER "Build 3rd task (broker)" OFF)
 
 set(
   HUNTER_CACHE_SERVERS
@@ -29,13 +31,17 @@ find_package(GTest CONFIG REQUIRED)
 add_library(
   ${PROJECT_NAME}
   STATIC
-        sources/Json.cpp
-        sources/JsonParser.cpp sources/Utils.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/sources/Json.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sources/JsonParser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sources/Utils.cpp
+)
 
 add_executable(
   tests
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/TestJson.cpp
-        tests/TestJsonObject.cpp tests/TestJsonArray.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/TestJson.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/TestJsonObject.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/TestJsonArray.cpp
+)
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -50,6 +56,24 @@ target_link_libraries(tests gtest gtest_main ${PROJECT_NAME})
 
 enable_testing()
 add_test(NAME unit_tests COMMAND tests)
+
+if (BUILD_DEMO)
+  set(DEMO_NAME ${PROJECT_NAME}Demo)
+  add_executable(
+    ${DEMO_NAME}
+    ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
+  )
+
+  target_include_directories(
+    ${DEMO_NAME}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+  target_link_libraries(${DEMO_NAME} ${PROJECT_NAME})
+endif ()
+
+if (BUILD_BROKER)
+
+endif ()
 
 if (BUILD_COVERAGE)
   set(ENABLE_COVERAGE ON CACHE BOOL "Enable coverage build." FORCE)

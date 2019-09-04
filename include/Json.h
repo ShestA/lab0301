@@ -53,6 +53,9 @@ public:
     // Добавить значение в массив
     void addToArray(const std::any &value);
 
+    // Получить список ключей, если JSON-объект
+    [[nodiscard]] std::vector<std::string> getKeys() const;
+
     // Метод возвращает true, если данный экземпляр содержит в себе JSON-массив. Иначе false.
     [[nodiscard]] bool is_array() const;
 

@@ -48,6 +48,21 @@ void Json::addToArray(const std::any &value)
     arrayData->push_back(value);
 }
 
+std::vector<std::string> Json::getKeys() const
+{
+    if (!objectData) {
+        throw JsonUnexpectedType("Expected JSON object");
+    }
+
+    std::vector<std::string> result;
+    result.reserve(objectData->size());
+    for (const auto &pair: *objectData) {
+        result.push_back(pair.first);
+    }
+
+    return result;
+}
+
 bool Json::is_array() const
 {
     if (Json::is_null()) {
