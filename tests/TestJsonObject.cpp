@@ -85,3 +85,27 @@ TEST(JsonObject, NestedWithArrayWithValues)
 
     EXPECT_EQ(std::any_cast<bool>(json["key2"]), true);
 }
+
+TEST(JsonObject, WrongEnd)
+{
+    EXPECT_THROW(
+        Json{R"({ "key": {    })"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, WrongObject)
+{
+    EXPECT_THROW(
+        Json{R"({ "some_key": "some_value", "value again"    })"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, WrongKeyword)
+{
+    EXPECT_THROW(
+        Json{R"({ "some_key": "some_value", "new_key": undefined    })"},
+        JsonParseException
+    );
+}

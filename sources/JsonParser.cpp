@@ -144,7 +144,7 @@ bool JsonParser::parseNewValueIfCan()
         // Начало числа
         currentType = Number;
         currentValue = currentChar;
-    } else if (currentChar == 't' || currentChar == 'f') {
+    } else if (currentChar == 't' || currentChar == 'f' || currentChar == 'n') {
         // Начало bool значения
         currentType = Boolean;
         currentValue = currentChar;
@@ -197,6 +197,10 @@ bool JsonParser::continueParsingValueIfCan(const std::function<void(const std::a
             bool value = currentValue == "tru";
 
             addFunction(value);
+            clearValue(true);
+        } else if (currentValue == "nul" && currentChar == 'l') {
+            // Завершение чтения ключевого слова
+            addFunction({});
             clearValue(true);
         } else if (Utils::isCharSpace(currentChar) || currentChar == ',') {
             // Завершение чтения ключевого слова, однако ключевое слово не распознано

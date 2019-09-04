@@ -13,7 +13,7 @@ TEST(Json, NullJson)
 
 TEST(Json, ExampleJson)
 {
-    Json object{R"(
+    Json object = Json::parse(R"(
         {
             "lastname" : "Ivanov",
             "firstname" : "Ivan",
@@ -27,7 +27,7 @@ TEST(Json, ExampleJson)
                 "street" : "Vozdvijenka"
             }
         }
-    )"};
+    )");
 
     EXPECT_EQ(std::any_cast<std::string>(object["lastname"]), "Ivanov");
     EXPECT_EQ(std::any_cast<bool>(object["islegal"]), false);

@@ -1,3 +1,5 @@
+#include <cstring>
+#include <JsonException.h>
 #include "Utils.h"
 
 bool Utils::isCharSpace(char c)
@@ -21,5 +23,11 @@ bool Utils::isCharNumber(char c)
 
 double Utils::stringToNumber(const std::string &string)
 {
-    return stod(string);
+    char *unexpectedChars;
+    double value = std::strtod(string.c_str(), &unexpectedChars);
+    if (std::strlen(unexpectedChars) > 0) {
+        throw JsonParseCannotParseNumber("Cannot convert '" + string + "' to number");
+    }
+
+    return value;
 }

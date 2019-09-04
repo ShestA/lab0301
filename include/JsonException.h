@@ -43,3 +43,9 @@ class JsonParseUnexpectedChar : public JsonParseException
 public:
     using JsonParseException::JsonParseException;
 };
+
+class JsonParseCannotParseNumber : public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
+};
