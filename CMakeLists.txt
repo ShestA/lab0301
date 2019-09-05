@@ -72,7 +72,20 @@ if (BUILD_DEMO)
 endif ()
 
 if (BUILD_BROKER)
+  hunter_add_package(nlohmann_json)
+  find_package(nlohmann_json CONFIG REQUIRED)
 
+  set(BROKER_NAME ${PROJECT_NAME}Broker)
+  add_executable(
+    ${BROKER_NAME}
+    ${CMAKE_CURRENT_SOURCE_DIR}/broker/main.cpp
+  )
+
+  target_include_directories(
+    ${BROKER_NAME}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+  target_link_libraries(${BROKER_NAME} ${PROJECT_NAME} nlohmann_json::nlohmann_json)
 endif ()
 
 if (BUILD_COVERAGE)
