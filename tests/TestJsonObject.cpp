@@ -102,10 +102,42 @@ TEST(JsonObject, WrongObject)
     );
 }
 
-TEST(JsonObject, WrongKeyword)
+TEST(JsonObject, WrongKeywordStart)
 {
     EXPECT_THROW(
         Json{R"({ "some_key": "some_value", "new_key": undefined    })"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, WrongKeywordEnd)
+{
+    EXPECT_THROW(
+        Json{R"({ "some_key": "some_value", "new_key": fallen    })"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, CharAfterEndException)
+{
+    EXPECT_THROW(
+        Json{R"({},)"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, ExpectedKeyException)
+{
+    EXPECT_THROW(
+        Json{R"({ 123: 123 })"},
+        JsonParseException
+    );
+}
+
+TEST(JsonObject, ExpectedSomething)
+{
+    EXPECT_THROW(
+        Json{R"({ "123": })"},
         JsonParseException
     );
 }

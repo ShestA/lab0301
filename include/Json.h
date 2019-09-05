@@ -88,7 +88,7 @@ public:
     }
 
     // Метод возвращает объекта класса Json из файла, содержащего Json-данные в текстовом формате.
-    static Json parseFile(const std::string &path_to_file);
+    static Json parseFile(const std::string &pathToFile);
 
     virtual ~Json();
 

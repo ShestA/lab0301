@@ -9,10 +9,31 @@ Json &Json::operator=(const Json &json)
     this->~Json();
 
     if (json.objectData) {
-        this->objectData = new ObjectType(*json.objectData);
+        this->objectData = new ObjectType;
+
+        // Копирование
+        for (const auto &pair: *json.objectData) {
+            if (pair.second.type() == typeid(Json *)) {
+                auto &oldJson = *std::any_cast<Json *>(pair.second);
+                (*this->objectData)[pair.first] = new Json(oldJson);
+            } else {
+                (*this->objectData)[pair.first] = pair.second;
+            }
+        }
     }
     if (json.arrayData) {
-        this->arrayData = new ArrayType(*json.arrayData);
+        this->arrayData = new ArrayType;
+        this->arrayData->reserve(json.arrayData->size());
+
+        // Копирование
+        for (const std::any &value: *json.arrayData) {
+            if (value.type() == typeid(Json *)) {
+                auto &oldJson = *std::any_cast<Json *>(value);
+                this->arrayData->emplace_back(new Json(oldJson));
+            } else {
+                this->arrayData->push_back(value);
+            }
+        }
     }
 
     return *this;
@@ -145,9 +166,13 @@ size_t Json::getSize() const
     }
 }
 
-Json Json::parseFile(const std::string &path_to_file)
+Json Json::parseFile(const std::string &pathToFile)
 {
-    std::ifstream fileStream(path_to_file);
+    std::ifstream fileStream(pathToFile);
+    if (fileStream.fail()) {
+        throw JsonParseFileException("Cannot read file: " + pathToFile);
+    }
+
     std::string fullFile(
         std::istreambuf_iterator<char>{fileStream},
         std::istreambuf_iterator<char>()

@@ -49,3 +49,9 @@ class JsonParseCannotParseNumber : public JsonParseException
 public:
     using JsonParseException::JsonParseException;
 };
+
+class JsonParseFileException: public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
+};

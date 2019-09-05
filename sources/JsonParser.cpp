@@ -308,12 +308,8 @@ bool JsonParser::jsonFillObjectBehavior()
             prevContainer->addToObjectKey(currentKey, created);
             return true;            // ok, continue
         }
-        if (currentChar == '}') {
-            finishCurrentJson();
-            return true;
-        }
 
-        throw JsonParseInternalError(std::string("Attempt to fill object with unexpected character ") + currentChar);
+        throw JsonParseUnexpectedChar(std::string("Expected value after key. Got: ") + currentChar);
     }
 
     bool parsingResult = continueParsingValueIfCan(
