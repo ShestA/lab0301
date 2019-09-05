@@ -26,6 +26,8 @@ void printTabs(size_t size)
     std::cout << std::string("-") * size << " ";
 }
 
+void printValue(const std::any &value, size_t &tabSize);
+
 void printJson(Json &json)
 {
     static size_t tabSize = 2;
@@ -35,24 +37,7 @@ void printJson(Json &json)
             printTabs(tabSize);
             std::cout << key << " : ";
 
-            const std::any &value = json[key];
-            if (value.type() == typeid(Json *)) {
-                tabSize += 2;
-                std::cout << "\n";
-
-                printJson(*std::any_cast<Json *>(value));
-            } else if (value.type() == typeid(std::string)) {
-
-                std::cout << std::any_cast<std::string>(value) << "\n";
-            } else if (value.type() == typeid(double)) {
-
-                std::cout << std::any_cast<double>(value) << "\n";
-            } else if (value.type() == typeid(bool)) {
-
-                std::cout << (std::any_cast<bool>(value) ? "true" : "false") << "\n";
-            } else { // null
-                std::cout << "null\n";
-            }
+            printValue(json[key], tabSize);
         }
 
         tabSize -= 2;
@@ -60,24 +45,7 @@ void printJson(Json &json)
         for (size_t i = 0; i < json.getSize(); i++) {
             printTabs(tabSize);
 
-            const std::any &value = json[i];
-            if (value.type() == typeid(Json *)) {
-                tabSize += 2;
-                std::cout << "\n";
-
-                printJson(*std::any_cast<Json *>(value));
-            } else if (value.type() == typeid(std::string)) {
-
-                std::cout << std::any_cast<std::string>(value) << "\n";
-            } else if (value.type() == typeid(double)) {
-
-                std::cout << std::any_cast<double>(value) << "\n";
-            } else if (value.type() == typeid(bool)) {
-
-                std::cout << (std::any_cast<bool>(value) ? "true" : "false") << "\n";
-            } else { // null
-                std::cout << "null\n";
-            }
+            printValue(json[i], tabSize);
         }
 
         tabSize -= 2;
@@ -93,4 +61,28 @@ int main()
     auto json = Json::parseFile(filename);
 
     printJson(json);
+}
+
+void printValue(const std::any &value, size_t &tabSize)
+{
+    if (value.type() == typeid(Json *)) {
+        tabSize += 2;
+        std::cout << "\n";
+
+        printJson(*std::any_cast<Json *>(value));
+        return;
+    }
+    if (value.type() == typeid(std::string)) {
+        std::cout << '"' << std::any_cast<std::string>(value) << "\"\n";
+        return;
+    }
+    if (value.type() == typeid(double)) {
+        std::cout << std::any_cast<double>(value) << "\n";
+        return;
+    } else if (value.type() == typeid(bool)) {
+        std::cout << (std::any_cast<bool>(value) ? "true" : "false") << "\n";
+        return;
+    }
+
+    std::cout << "null\n";
 }
