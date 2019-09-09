@@ -45,14 +45,33 @@ add_executable(
 
 target_include_directories(
   ${PROJECT_NAME}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_include_directories(
   tests
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${GTEST_ROOT}/include
 )
-target_link_libraries(tests gtest gtest_main ${PROJECT_NAME})
+find_library(
+  GTEST_LOCAL_LIB
+  NAMES gtest
+  PATHS ${PROJECT_NAME}/lib64/
+)
+find_library(
+  GTEST_LOCAL_LIB_MAIN
+  NAMES gtest_main
+  PATHS ${PROJECT_NAME}/lib64/
+)
+target_link_libraries(
+  tests
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${GTEST_LOCAL_LIB}
+  ${GTEST_LOCAL_LIB_MAIN}
+  ${PROJECT_NAME}
+)
 
 enable_testing()
 add_test(NAME unit_tests COMMAND tests)
