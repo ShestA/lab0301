@@ -6,7 +6,7 @@
 TEST(Json, NullJson)
 {
     Json json{};
-    EXPECT_EQ(json.getSize(), 0);
+    EXPECT_EQ(json.getSize(), 0u);
     EXPECT_EQ(json.is_object(), false);
     EXPECT_EQ(json.is_array(), false);
     EXPECT_EQ(json.is_null(), true);
@@ -47,7 +47,7 @@ TEST(Json, ParseFile)
 {
     auto json = Json::parseFile("../tests/TestData.json");
 
-    EXPECT_EQ(json.getSize(), 2);
+    EXPECT_EQ(json.getSize(), 2u);
     EXPECT_EQ(json.is_object(), true);
     EXPECT_EQ(json.is_array(), false);
     EXPECT_EQ(json.is_null(), false);
@@ -68,7 +68,7 @@ TEST(Json, CopyAssigmentOperator)
     const Json &json = Json{R"({"key":[[1,2],2], "k": "v"})"};
 
     Json jsonCopy = json;
-    EXPECT_EQ(jsonCopy.getSize(), 2);
+    EXPECT_EQ(jsonCopy.getSize(), 2u);
     EXPECT_EQ(jsonCopy.is_object(), true);
     EXPECT_EQ(jsonCopy.is_array(), false);
     EXPECT_EQ(jsonCopy.is_null(), false);
@@ -76,7 +76,7 @@ TEST(Json, CopyAssigmentOperator)
     {
         Json &nested = *std::any_cast<Json *>(jsonCopy["key"]);
 
-        EXPECT_EQ(nested.getSize(), 2);
+        EXPECT_EQ(nested.getSize(), 2u);
         EXPECT_EQ(nested.is_object(), false);
         EXPECT_EQ(nested.is_array(), true);
         EXPECT_EQ(nested.is_null(), false);
@@ -84,7 +84,7 @@ TEST(Json, CopyAssigmentOperator)
         {
             Json &list = *std::any_cast<Json *>(nested[0]);
 
-            EXPECT_EQ(list.getSize(), 2);
+            EXPECT_EQ(list.getSize(), 2u);
             EXPECT_EQ(list.is_object(), false);
             EXPECT_EQ(list.is_array(), true);
             EXPECT_EQ(list.is_null(), false);
@@ -100,7 +100,7 @@ TEST(Json, CopyAssigmentOperatorSelf)
     Json *dirtyPointer = &json;
 
     json = *dirtyPointer;
-    EXPECT_EQ(json.getSize(), 3);
+    EXPECT_EQ(json.getSize(), 3u);
     EXPECT_EQ(json.is_object(), false);
     EXPECT_EQ(json.is_array(), true);
     EXPECT_EQ(json.is_null(), false);
@@ -113,9 +113,9 @@ TEST(Json, MoveAssigmentOperator)
     Json json = Json{R"({"key":[1,2]})"};
 
     Json jsonCopy = std::move(json);
-    EXPECT_EQ(json.getSize(), 0);
+    EXPECT_EQ(json.getSize(), 0u);
 
-    EXPECT_EQ(jsonCopy.getSize(), 1);
+    EXPECT_EQ(jsonCopy.getSize(), 1u);
     EXPECT_EQ(jsonCopy.is_object(), true);
     EXPECT_EQ(jsonCopy.is_array(), false);
     EXPECT_EQ(jsonCopy.is_null(), false);
@@ -123,7 +123,7 @@ TEST(Json, MoveAssigmentOperator)
     {
         Json &nested = *std::any_cast<Json *>(jsonCopy["key"]);
 
-        EXPECT_EQ(nested.getSize(), 2);
+        EXPECT_EQ(nested.getSize(), 2u);
         EXPECT_EQ(nested.is_object(), false);
         EXPECT_EQ(nested.is_array(), true);
         EXPECT_EQ(nested.is_null(), false);
@@ -136,7 +136,7 @@ TEST(Json, MoveAssigmentOperatorSelf)
     Json *dirtyPointer = &json;
 
     *dirtyPointer = std::move(json);
-    EXPECT_EQ(json.getSize(), 3);
+    EXPECT_EQ(json.getSize(), 3u);
     EXPECT_EQ(json.is_object(), false);
     EXPECT_EQ(json.is_array(), true);
     EXPECT_EQ(json.is_null(), false);
