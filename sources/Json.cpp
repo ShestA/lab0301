@@ -6,6 +6,10 @@
 
 Json &Json::operator=(const Json &json)
 {
+    if (this == &json) {
+        return *this;
+    }
+
     this->~Json();
 
     if (json.objectData) {
@@ -41,6 +45,10 @@ Json &Json::operator=(const Json &json)
 
 Json &Json::operator=(Json &&json) noexcept
 {
+    if (this == &json) {
+        return *this;
+    }
+
     this->~Json();
 
     this->objectData = json.objectData;

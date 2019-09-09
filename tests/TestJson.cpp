@@ -94,6 +94,18 @@ TEST(Json, CopyAssigmentOperator)
     EXPECT_EQ(std::any_cast<std::string>(jsonCopy["k"]), "v");
 }
 
+TEST(Json, CopyAssigmentOperatorSelf)
+{
+    Json json{R"([1,2,3])"};
+    Json *dirtyPointer = &json;
+
+    json = *dirtyPointer;
+    EXPECT_EQ(json.getSize(), 3);
+    EXPECT_EQ(json.is_object(), false);
+    EXPECT_EQ(json.is_array(), true);
+    EXPECT_EQ(json.is_null(), false);
+}
+
 TEST(Json, MoveAssigmentOperator)
 {
     ASSERT_EQ(std::is_move_assignable_v<Json>, true);
@@ -116,6 +128,18 @@ TEST(Json, MoveAssigmentOperator)
         EXPECT_EQ(nested.is_array(), true);
         EXPECT_EQ(nested.is_null(), false);
     }
+}
+
+TEST(Json, MoveAssigmentOperatorSelf)
+{
+    Json json{R"([1,2,3])"};
+    Json *dirtyPointer = &json;
+
+    *dirtyPointer = std::move(json);
+    EXPECT_EQ(json.getSize(), 3);
+    EXPECT_EQ(json.is_object(), false);
+    EXPECT_EQ(json.is_array(), true);
+    EXPECT_EQ(json.is_null(), false);
 }
 
 TEST(Json, AddToObject)
