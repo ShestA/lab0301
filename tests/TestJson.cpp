@@ -180,6 +180,16 @@ TEST(Json, OperatorArrayTypeException)
     );
 }
 
+TEST(Json, OperatorObjectTypeException)
+{
+    Json json{"{}"};
+
+    EXPECT_THROW(
+        json[0],
+        JsonException
+    );
+}
+
 TEST(Json, OperatorArrayExceptionSize)
 {
     Json json{"[]"};
@@ -197,5 +207,13 @@ TEST(Json, OperatorObjectTypeExceptionNoKey)
     EXPECT_THROW(
         json["__definitely_not_existing_key__"],
         JsonException
+    );
+}
+
+TEST(Json, NoJson)
+{
+    EXPECT_THROW(
+        Json json{"false"},
+        JsonParseException
     );
 }

@@ -262,6 +262,13 @@ bool JsonParser::jsonFillObjectBehavior()
             // Уже читаем ключ
             if (currentChar == stringOpenQuote) {
                 // Закончить читать ключ
+
+                if (const auto &keys = jsonStack.top()->getKeys();
+                    std::find(keys.cbegin(), keys.cend(), currentValue) != keys.cend()) {
+                    // Такой ключ уже существует
+                    throw JsonParseDuplicatedKeyError("Key '" + currentValue + "' already exists");
+                }
+
                 jsonStack.top()->addToObjectKey(currentValue, {});
                 currentKey = currentValue;
 

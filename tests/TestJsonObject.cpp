@@ -141,3 +141,11 @@ TEST(JsonObject, ExpectedSomething)
         JsonParseException
     );
 }
+
+TEST(JsonObject, KeyRepeat)
+{
+    EXPECT_THROW(
+        Json{R"({ "123":1, "123": 2 })"},
+        JsonParseException
+    );
+}

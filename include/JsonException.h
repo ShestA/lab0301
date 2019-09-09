@@ -55,3 +55,9 @@ class JsonParseFileException: public JsonParseException
 public:
     using JsonParseException::JsonParseException;
 };
+
+class JsonParseDuplicatedKeyError: public JsonParseException
+{
+public:
+    using JsonParseException::JsonParseException;
+};
