@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <functional>
+#include <memory>
 #include "Json.h"
 
 class JsonParser
@@ -26,10 +27,7 @@ public:
         return *result;
     }
 
-    virtual ~JsonParser()
-    {
-        delete result;
-    }
+    virtual ~JsonParser() = default;
 
     friend Json;
 
@@ -92,5 +90,5 @@ private:
     char stringOpenQuote = '\0';                    // Ковычка, с которой началась строка
     bool isEscapeChar = false;                      // Является ли текущий символ экранированным
 
-    Json *result = nullptr;                         // Результат
+    std::unique_ptr<Json> result;                         // Результат
 };

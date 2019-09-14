@@ -128,7 +128,7 @@ bool JsonParser::jsonNoJsonBehavior()
     if (!created) {
         throw JsonParseUnexpectedChar(std::string("Expected begin of object or array, got '") + currentChar + "'");
     }
-    result = created;
+    result.reset(created);
 
     return false;
 }
