@@ -149,3 +149,23 @@ TEST(JsonObject, KeyRepeat)
         JsonParseException
     );
 }
+
+TEST(JsonObject, BackslashInKey)
+{
+    Json json{R"({ "1\"\2" : true })"};
+    EXPECT_EQ(json.getSize(), 1u);
+    EXPECT_EQ(json.is_object(), true);
+    EXPECT_EQ(json.is_array(), false);
+    EXPECT_EQ(json.is_null(), false);
+
+    EXPECT_EQ(std::any_cast<bool>(json["1\"2"]), true);
+}
+
+TEST(JsonObject, BackslashInKeyBad)
+{
+    EXPECT_THROW(
+        Json{R"({ "\1"":1 })"},
+        JsonParseException
+    );
+}
+

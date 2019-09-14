@@ -90,6 +90,7 @@ private:
     char currentChar;                               // Текущий символ
     std::string currentValue;                       // Текущее считываемое значение
     char stringOpenQuote = '\0';                    // Ковычка, с которой началась строка
+    bool isEscapeChar = false;                      // Является ли текущий символ экранированным
 
     Json *result = nullptr;                         // Результат
 };

@@ -223,3 +223,14 @@ TEST(JsonArray, HackString)
     EXPECT_EQ(std::any_cast<std::string>(json[0]), "',..:");
     EXPECT_EQ(std::any_cast<std::string>(json[1]), R"(".:,:)");
 }
+
+TEST(JsonArray, BackslashInString)
+{
+    Json json{R"([ "word1 \" word2" ])"};
+    EXPECT_EQ(json.getSize(), 1u);
+    EXPECT_EQ(json.is_object(), false);
+    EXPECT_EQ(json.is_array(), true);
+    EXPECT_EQ(json.is_null(), false);
+
+    EXPECT_EQ(std::any_cast<std::string>(json[0]), "word1 \" word2");
+}

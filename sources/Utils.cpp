@@ -21,6 +21,11 @@ bool Utils::isCharNumber(char c)
     return c >= '0' && c <= '9';
 }
 
+bool Utils::isCharEscaping(char c)
+{
+    return c == '\\';
+}
+
 double Utils::stringToNumber(const std::string &string)
 {
     char *unexpectedChars;

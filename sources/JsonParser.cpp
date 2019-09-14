@@ -157,6 +157,7 @@ bool JsonParser::parseNewValueIfCan()
 
 void JsonParser::clearValue(bool willBeExpectedDivider)
 {
+    isEscapeChar = false;
     stringOpenQuote = '\0';
     currentType = NoneParsing;
     expectedDivider = willBeExpectedDivider;
@@ -165,11 +166,18 @@ void JsonParser::clearValue(bool willBeExpectedDivider)
 bool JsonParser::continueParsingValueIfCan(const std::function<void(const std::any &)> &addFunction)
 {
     if (currentType == StringValue) {
-        if (currentChar == stringOpenQuote) {
+        if (currentChar == stringOpenQuote && !isEscapeChar) {
             // Завершение чтения строки
             addFunction(currentValue);
             clearValue(true);
+        } else if (Utils::isCharEscaping(currentChar)) {
+            isEscapeChar = true;
         } else {
+            // Сбросить значение экранирования
+            if (isEscapeChar) {
+                isEscapeChar = false;
+            }
+
             // Продолжение чтения строки
             currentValue += currentChar;
         }
@@ -260,7 +268,7 @@ bool JsonParser::jsonFillObjectBehavior()
         // Ожидание ключа
         if (currentType == StringKey) {
             // Уже читаем ключ
-            if (currentChar == stringOpenQuote) {
+            if (currentChar == stringOpenQuote && !isEscapeChar) {
                 // Закончить читать ключ
 
                 if (const auto &keys = jsonStack.top()->getKeys();
@@ -276,6 +284,14 @@ bool JsonParser::jsonFillObjectBehavior()
                 isObjectKey = false;
                 expectedObjectDivider = true;
                 return true;
+            } else if (Utils::isCharEscaping(currentChar)) {
+                isEscapeChar = true;
+                return true;
+            }
+
+            // Сбросить экранирование
+            if (isEscapeChar) {
+                isEscapeChar = false;
             }
 
             // Продолжить чтение ключа

@@ -11,6 +11,8 @@ bool isCharQuote(char c);
 
 bool isCharNumber(char c);
 
+bool isCharEscaping(char c);
+
 double stringToNumber(const std::string &string);
 
 }
