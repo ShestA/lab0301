@@ -2,4 +2,4 @@
 
 ./scripts/tests.sh
 
-cd .build && valgrind tests
+cd .build && valgrind ./tests

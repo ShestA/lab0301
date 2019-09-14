@@ -33,7 +33,7 @@ TEST(JsonObject, SimpleObject)
 
 TEST(JsonObject, NestedObject)
 {
-    Json json{R"({ "key" : { "number":   9.4 } })"};
+    Json json{R"({ "key" : { "number":   9.5 } })"};
     EXPECT_EQ(json.getSize(), 1u);
     EXPECT_EQ(json.is_object(), true);
     EXPECT_EQ(json.is_array(), false);
@@ -45,7 +45,7 @@ TEST(JsonObject, NestedObject)
     EXPECT_EQ(nested.is_array(), false);
     EXPECT_EQ(nested.is_null(), false);
 
-    EXPECT_EQ(std::any_cast<double>(nested["number"]), 9.4);
+    EXPECT_EQ(std::any_cast<double>(nested["number"]), 9.5);
 }
 
 TEST(JsonObject, NestedWithArray)

@@ -24,13 +24,13 @@ TEST(JsonArray, SimpleArray)
 
 TEST(JsonArray, MultitypeArray)
 {
-    Json json{R"([1.1, "I am a string", "another string", false])"};
+    Json json{R"([1.5, "I am a string", "another string", false])"};
     EXPECT_EQ(json.getSize(), 4u);
     EXPECT_EQ(json.is_object(), false);
     EXPECT_EQ(json.is_array(), true);
     EXPECT_EQ(json.is_null(), false);
 
-    EXPECT_EQ(std::any_cast<double>(json[0]), 1.1);
+    EXPECT_EQ(std::any_cast<double>(json[0]), 1.5);
     EXPECT_EQ(std::any_cast<std::string>(json[1]), "I am a string");
     EXPECT_EQ(std::any_cast<std::string>(json[2]), "another string");
     EXPECT_EQ(std::any_cast<bool>(json[3]), false);
