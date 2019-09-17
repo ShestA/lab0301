@@ -1,24 +1,22 @@
 #include <cstring>
 #include <JsonException.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "Utils.h"
 
 bool Utils::isCharSpace(char c)
 {
-    return c == ' '
-        || c == '\t'
-        || c == '\r'
-        || c == '\n';
+    return boost::is_any_of(" \t\r\n")(c);
 }
 
 bool Utils::isCharQuote(char c)
 {
-    return c == '\''
-        || c == '\"';
+    return boost::is_any_of("\'\"")(c);
 }
 
 bool Utils::isCharNumber(char c)
 {
-    return c >= '0' && c <= '9';
+    return boost::is_any_of("0123456789-e.")(c);
 }
 
 bool Utils::isCharEscaping(char c)
@@ -28,11 +26,10 @@ bool Utils::isCharEscaping(char c)
 
 double Utils::stringToNumber(const std::string &string)
 {
-    char *unexpectedChars;
-    double value = std::strtod(string.c_str(), &unexpectedChars);
-    if (std::strlen(unexpectedChars) > 0) {
-        throw JsonParseCannotParseNumber("Cannot convert '" + string + "' to number");
-    }
+    return boost::lexical_cast<double>(string);
+}
 
-    return value;
+bool Utils::isCharSugar(char c)
+{
+    return boost::is_any_of(",:[]{}")(c);
 }

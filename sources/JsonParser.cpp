@@ -1,354 +1,228 @@
+#include <boost/algorithm/string.hpp>
+#include <functional>
+#include <iostream>
+#include <boost/lexical_cast/bad_lexical_cast.hpp>
 #include "JsonParser.h"
 #include "Utils.h"
 
-JsonParser::JsonParser(const std::string &string)
+Json *JsonParser::parse(const std::string &string)
 {
-    for (char now : string) {       // Основной цикл
-        currentChar = now;
+    PartsType parts = fullSplit(string);
 
-        if (jsonEnded) {
-            // JSON гарантировано закончился
-            if (jsonEndedBehavior()) {
-                continue;
-            }
-        }
+    auto it = parts.cbegin();
+    std::unique_ptr<Json> result{std::any_cast<Json *>(parsePart(it, parts.cend()))};
 
-        if (expectedDivider) {
-            // Ожидание ,
-            if (jsonExceptedDividerBehavior()) {
-                continue;
-            }
-        }
-
-        if (expectedObjectDivider) {
-            // Ожидание :
-            if (jsonExceptedObjectDividerBehavior()) {
-                continue;
-            }
-        }
-
-        if (jsonStack.empty()) {
-            // Некуда класть значения. Ожидаем множество (объект или массив)
-            if (jsonNoJsonBehavior()) {
-                continue;
-            }
-        } else if (jsonStack.top()->is_array()) {
-            // Есть массив
-            if (jsonFillArrayBehavior()) {
-                continue;
-            }
-        } else if (jsonStack.top()->is_object()) {
-            // Есть объект
-            if (jsonFillObjectBehavior()) {
-                continue;
-            }
-        }
+    if (it != parts.cend()) {
+        throw JsonParseUnexpectedChar{"Excepted end of JSON"};
     }
 
-    if (!jsonEnded) {
-        throw JsonParseUnexpectedEof("Unexpected end of json data");
+    return result.release();
+}
+
+std::optional<std::any>
+JsonParser::ejectString(std::string::const_iterator &iterator, const std::string::const_iterator &end)
+{
+    if (!Utils::isCharQuote(*iterator)) {
+        return std::nullopt;
+    }
+
+    char openQuote = *iterator;
+    auto stringStart = ++iterator;
+
+    auto stringEnd = std::find(iterator, end, openQuote);
+    if (stringEnd == end) {
+        throw JsonParseUnexpectedEof{"Expected end of the string"};
+    }
+
+    iterator = stringEnd;
+    iterator++;
+    return std::string(stringStart, stringEnd);
+}
+
+std::optional<std::any>
+JsonParser::ejectNumber(std::string::const_iterator &iterator, const std::string::const_iterator &end)
+{
+    if (!Utils::isCharNumber(*iterator)) {
+        return std::nullopt;
+    }
+
+    auto startNumber = std::find_if(iterator, end, Utils::isCharNumber);
+    if (startNumber == end) {
+        return std::nullopt;
+    }
+
+    auto endNumber = std::find_if_not(startNumber, end, Utils::isCharNumber);
+    iterator = endNumber;
+
+    std::string number = std::string(startNumber, endNumber);
+    try {
+        return Utils::stringToNumber(number);
+    } catch (boost::bad_lexical_cast &) {
+        throw JsonParseCannotParseNumber{"Cannot parse number '" + number + "'"};
     }
 }
 
-void JsonParser::finishCurrentJson()
+std::optional<std::any>
+JsonParser::ejectKeyword(std::string::const_iterator &iterator, const std::string::const_iterator &end)
 {
-    jsonStack.pop();
-    currentType = NoneParsing;
+    static std::unordered_map<std::string, std::any> results = {
+        {"true", static_cast<bool>(true)},
+        {"false", static_cast<bool>(false)},
+        {"null", std::any{}},
+    };
 
-    if (jsonStack.empty()) {
-        jsonEnded = true;
-    } else {
-        if (jsonStack.top()->is_object()) {
-            isObjectKey = true;
+    size_t length = end - iterator;
+
+    for (const auto &pair : results) {
+        if (length < pair.first.size()) {
+            continue;
         }
 
-        expectedDivider = true;
-    }
-}
-
-bool JsonParser::jsonEndedBehavior()
-{
-    if (!Utils::isCharSpace(currentChar)) {
-        throw JsonParseUnexpectedChar("Expected end of json data");
+        if (std::string(iterator, iterator + pair.first.size()) == pair.first) {
+            iterator += pair.first.size();
+            return pair.second;
+        }
     }
 
-    return true;
+    return std::nullopt;
 }
 
-bool JsonParser::jsonExceptedDividerBehavior()
+JsonParser::PartsType JsonParser::fullSplit(const std::string &input)
 {
-    if (currentChar == ',') {
-        expectedDivider = false;
-    } else if ((currentChar == '}' && jsonStack.top()->is_object())
-        || (currentChar == ']' && jsonStack.top()->is_array())) {
+    std::list<std::function<
+        std::optional<std::any>(std::string::const_iterator &, const std::string::const_iterator &)
+    >> ejectors = {
+        &ejectString,
+        &ejectNumber,
+        &ejectKeyword,
+    };
 
-        finishCurrentJson();
-    } else if (!Utils::isCharSpace(currentChar)) {
-        throw JsonParseUnexpectedChar(std::string("Expected ',', got '") + currentChar + "'");
-    }
-
-    return true;
-}
-
-bool JsonParser::jsonExceptedObjectDividerBehavior()
-{
-    if (currentChar == ':') {
-        expectedObjectDivider = false;
-    } else if (!Utils::isCharSpace(currentChar)) {
-        throw JsonParseUnexpectedChar(std::string("Expected ':', got '") + currentChar + "'");
-    }
-
-    return true;
-}
-
-Json *JsonParser::createNewJsonIfCan()
-{
-    if (currentChar == '{') {
-        // Инициализация JSON объекта
-        isObjectKey = true;
-        jsonStack.push(new Json{Json::ObjectType{}});
-    } else if (currentChar == '[') {
-        // Инициализация JSON массива
-        jsonStack.push(new Json{Json::ArrayType{}});
-    } else {
-        // Не смог
-        return nullptr;
-    }
-
-    return jsonStack.top();
-}
-
-bool JsonParser::jsonNoJsonBehavior()
-{
-    if (Utils::isCharSpace(currentChar)) {
-        return true;            // ok, continue
-    }
-
-    Json *created = createNewJsonIfCan();
-    if (!created) {
-        throw JsonParseUnexpectedChar(std::string("Expected begin of object or array, got '") + currentChar + "'");
-    }
-    result.reset(created);
-
-    return false;
-}
-
-bool JsonParser::parseNewValueIfCan()
-{
-    if (Utils::isCharQuote(currentChar)) {
-        // Начало строки
-        currentType = StringValue;
-        stringOpenQuote = currentChar;
-        currentValue.clear();
-    } else if (Utils::isCharNumber(currentChar)) {
-        // Начало числа
-        currentType = Number;
-        currentValue = currentChar;
-    } else if (currentChar == 't' || currentChar == 'f' || currentChar == 'n') {
-        // Начало bool значения
-        currentType = Boolean;
-        currentValue = currentChar;
-    } else {
-        return false;
-    }
-
-    return true;
-}
-
-void JsonParser::clearValue(bool willBeExpectedDivider)
-{
-    isEscapeChar = false;
-    stringOpenQuote = '\0';
-    currentType = NoneParsing;
-    expectedDivider = willBeExpectedDivider;
-}
-
-bool JsonParser::continueParsingValueIfCan(const std::function<void(const std::any &)> &addFunction)
-{
-    if (currentType == StringValue) {
-        if (currentChar == stringOpenQuote && !isEscapeChar) {
-            // Завершение чтения строки
-            addFunction(currentValue);
-            clearValue(true);
-        } else if (Utils::isCharEscaping(currentChar)) {
-            isEscapeChar = true;
-        } else {
-            // Сбросить значение экранирования
-            if (isEscapeChar) {
-                isEscapeChar = false;
+    PartsType splitted;
+    for (std::string::const_iterator it = input.cbegin(); it != input.cend();) {
+        std::optional<std::any> part;
+        for (auto &ejector : ejectors) {
+            part = ejector(it, input.cend());
+            if (part.has_value()) {
+                splitted.emplace_back(part.value());
+                break;
             }
-
-            // Продолжение чтения строки
-            currentValue += currentChar;
         }
-    } else if (currentType == Number) {
-        if (Utils::isCharSpace(currentChar) || currentChar == ',') {
-            // Завершение чтения числа
-            double number = Utils::stringToNumber(currentValue);
-
-            addFunction(number);
-            clearValue(currentChar != ',');
-        } else if ((currentChar == '}' && jsonStack.top()->is_object())
-            || (currentChar == ']' && jsonStack.top()->is_array())) {
-            // Завершение чтения числа, причем вместе с завершением чтения контейнера
-            double number = Utils::stringToNumber(currentValue);
-
-            addFunction(number);
-            finishCurrentJson();
-        } else {
-            // Продолжение чтения числа
-            currentValue += currentChar;
+        if (part.has_value()) {
+            continue;
         }
-    } else if (currentType == Boolean) {
-        if ((currentValue == "tru" || currentValue == "fals") && currentChar == 'e') {
-            // Завершение чтения ключевого слова
-            bool value = currentValue == "tru";
 
-            addFunction(value);
-            clearValue(true);
-        } else if (currentValue == "nul" && currentChar == 'l') {
-            // Завершение чтения ключевого слова
-            addFunction({});
-            clearValue(true);
-        } else if (Utils::isCharSpace(currentChar) || currentChar == ',') {
-            // Завершение чтения ключевого слова, однако ключевое слово не распознано
-            throw JsonParseUnexpectedChar(
-                std::string("Unexpected keyword. Expected: true, false, null. Got: ") + currentValue
-            );
-        } else {
-            // Продолжение чтения ключевого слова
-            currentValue += currentChar;
+        if (Utils::isCharSugar(*it)) {
+            splitted.emplace_back(std::string{*it});
+            it++;
+            continue;
         }
-    } else {
-        // Не смог продолжить читать
-        return false;
+        if (Utils::isCharSpace(*it)) {
+            it = std::find_if_not(it, input.cend(), Utils::isCharSpace);
+            continue;
+        }
+        throw JsonParseUnexpectedChar{"Unexpected char '" + std::string{*it} + "'"};
+
     }
-
-    return true;        // ok, continue
+    return splitted;
 }
 
-bool JsonParser::jsonFillArrayBehavior()
+std::any
+JsonParser::parsePart(std::list<std::any>::const_iterator &iterator,
+                      const std::list<std::any>::const_iterator &end,
+                      bool inStart)
 {
-    if (currentType == NoneParsing) {
-        if (Utils::isCharSpace(currentChar)) {
-            return true;            // continue
-        }
-        if (parseNewValueIfCan()) {
-            return true;            // ok, continue
-        }
-        if (Json *prevContainer = this->jsonStack.top(), *created = createNewJsonIfCan(); created) {
-            prevContainer->addToArray(created);
-            return true;            // ok, continue
-        }
-        if (currentChar == ']') {
-            finishCurrentJson();
-            return true;
+    static auto startValid = [](const std::string &str) {
+        if (str.size() > 1) {
+            return false;
         }
 
-        throw JsonParseInternalError(std::string("Attempt to fill array with unexpected character ") + currentChar);
+        return boost::is_any_of("[{")(str[0]);
+    };
+
+    if (inStart && (iterator->type() != typeid(std::string) || !startValid(std::any_cast<std::string>(*iterator)))) {
+        throw JsonParseUnexpectedChar{"Expected start of JSON"};
     }
 
-    bool parsingResult = continueParsingValueIfCan(
-        [this](const std::any &value) {
-            Json &json = *this->jsonStack.top();
-            json.addToArray(value);
-        }
-    );
-
-    if (parsingResult) {
-        return true;            // ok, continue
+    if (Utils::isAnyEqual(*iterator, std::string{"["})) {
+        return parseArray(++iterator, end);
     }
-
-    throw JsonParseInternalError("Unexpected error while filling array");
+    if (Utils::isAnyEqual(*iterator, std::string{"{"})) {
+        return parseObject(++iterator, end);
+    }
+    auto prev = iterator;
+    iterator++;
+    return *prev;
 }
 
-bool JsonParser::jsonFillObjectBehavior()
+Json *
+JsonParser::parseArray(PartsType::const_iterator &iterator, const PartsType::const_iterator &end)
 {
-    if (isObjectKey) {
-        // Ожидание ключа
-        if (currentType == StringKey) {
-            // Уже читаем ключ
-            if (currentChar == stringOpenQuote && !isEscapeChar) {
-                // Закончить читать ключ
+    auto jsonResult = std::make_unique<Json>(Json::ArrayType{});
 
-                if (const auto &keys = jsonStack.top()->getKeys();
-                    std::find(keys.cbegin(), keys.cend(), currentValue) != keys.cend()) {
-                    // Такой ключ уже существует
-                    throw JsonParseDuplicatedKeyError("Key '" + currentValue + "' already exists");
-                }
-
-                jsonStack.top()->addToObjectKey(currentValue, {});
-                currentKey = currentValue;
-
-                clearValue(false);
-                isObjectKey = false;
-                expectedObjectDivider = true;
-                return true;
-            } else if (Utils::isCharEscaping(currentChar)) {
-                isEscapeChar = true;
-                return true;
-            }
-
-            // Сбросить экранирование
-            if (isEscapeChar) {
-                isEscapeChar = false;
-            }
-
-            // Продолжить чтение ключа
-            currentValue += currentChar;
-        } else if (currentType == NoneParsing) {
-            // Начать сериализацию ключа
-
-            if (Utils::isCharSpace(currentChar)) {
-                return true;
-            }
-            if (currentChar == '}') {
-                finishCurrentJson();
-                return true;
-            }
-            if (Utils::isCharQuote(currentChar)) {
-                stringOpenQuote = currentChar;
-                currentType = StringKey;
-                currentValue.clear();
-            } else {
-                throw JsonParseUnexpectedChar(std::string("Expected quote, got '") + currentChar + "'");
-            }
-        } else {
-            throw JsonParseInternalError("Expected string at key");
-        }
-
-        return true;
+    if (Utils::isAnyEqual(*iterator, std::string{"]"})) {
+        iterator++;
+        return jsonResult.release();
     }
 
-    if (currentType == NoneParsing) {
-        if (Utils::isCharSpace(currentChar)) {
-            return true;            // continue
+    while (iterator != end) {
+        std::any part = parsePart(iterator, end, false);
+        jsonResult->addToArray(part);
+
+        if (Utils::isAnyEqual(*iterator, std::string{"]"})) {
+            iterator++;
+            return jsonResult.release();
         }
-        if (parseNewValueIfCan()) {
-            return true;            // ok, continue
-        }
-        if (Json *prevContainer = this->jsonStack.top(), *created = createNewJsonIfCan(); created) {
-            prevContainer->addToObjectKey(currentKey, created);
-            return true;            // ok, continue
+        if (!Utils::isAnyEqual(*iterator, std::string{","})) {
+            throw JsonParseUnexpectedChar{"Expected ','"};
         }
 
-        throw JsonParseUnexpectedChar(std::string("Expected value after key. Got: ") + currentChar);
+        iterator++;
     }
 
-    bool parsingResult = continueParsingValueIfCan(
-        [this](const std::any &value) {
-            Json &json = *this->jsonStack.top();
-            json.addToObjectKey(currentKey, value);
-        }
-    );
+    throw JsonParseUnexpectedEof{"Expected end of array"};
+}
 
-    if (parsingResult) {
-        if (currentType == NoneParsing) {
-            isObjectKey = true;
-            currentKey.clear();
-        }
-        return true;
+Json *
+JsonParser::parseObject(std::list<std::any>::const_iterator &iterator, const std::list<std::any>::const_iterator &end)
+{
+    auto jsonResult = std::make_unique<Json>(Json::ObjectType{});
+
+    if (Utils::isAnyEqual(*iterator, std::string{"}"})) {
+        iterator++;
+        return jsonResult.release();
     }
 
-    throw JsonParseInternalError("Unexpected error while filling object");
+    while (iterator != end) {
+        if (iterator->type() != typeid(std::string)) {
+            throw JsonParseUnexpectedChar{"Expected key"};
+        }
+
+        auto key = std::any_cast<std::string>(*iterator);
+        if (auto keys = jsonResult->getKeys(); std::find(keys.cbegin(), keys.cend(), key) != keys.cend()) {
+            throw JsonParseDuplicatedKeyError{"Duplicated key '" + key + "'"};
+        }
+        iterator++;
+
+        if (!Utils::isAnyEqual(*iterator, std::string{":"})) {
+            throw JsonParseUnexpectedChar{"Expected ':'"};
+        }
+
+        auto value = parsePart(++iterator, end, false);
+        jsonResult->addToObjectKey(key, value);
+        if (iterator == end) {
+            break;
+        }
+
+        if (Utils::isAnyEqual(*iterator, std::string{"}"})) {
+            iterator++;
+            return jsonResult.release();
+        }
+        if (!Utils::isAnyEqual(*iterator, std::string{","})) {
+            throw JsonParseUnexpectedChar{"Expected ','"};
+        }
+
+        iterator++;
+    }
+
+    throw JsonParseUnexpectedEof{"Expected end of array"};
 }
