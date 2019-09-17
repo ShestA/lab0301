@@ -29,14 +29,23 @@ JsonParser::ejectString(std::string::const_iterator &iterator, const std::string
     char openQuote = *iterator;
     auto stringStart = ++iterator;
 
-    auto stringEnd = std::find(iterator, end, openQuote);
-    if (stringEnd == end) {
-        throw JsonParseUnexpectedEof{"Expected end of the string"};
-    }
+    std::string::const_iterator stringEnd;
+    do {
+        stringEnd = std::find(iterator, end, openQuote);
+        if (stringEnd == end) {
+            throw JsonParseUnexpectedEof{"Expected end of the string"};
+        }
 
-    iterator = stringEnd;
-    iterator++;
-    return std::string(stringStart, stringEnd);
+        iterator = stringEnd;
+        iterator++;
+    } while (*(stringEnd - 1) == '\\');
+
+    std::string result(stringStart, stringEnd);
+    boost::replace_all(result, "\\\\", "\\");
+    boost::replace_all(result, "\\\"", "\"");
+    boost::replace_all(result, "\\\'", "\'");
+
+    return result;
 }
 
 std::optional<std::any>
