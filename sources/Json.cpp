@@ -167,11 +167,11 @@ size_t Json::getSize() const
 {
     if (arrayData) {
         return arrayData->size();
-    } else if (objectData) {
-        return objectData->size();
-    } else {
-        return 0;
     }
+    if (objectData) {
+        return objectData->size();
+    }
+    return 0;
 }
 
 Json Json::parseFile(const std::string &pathToFile)
