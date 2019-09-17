@@ -112,7 +112,8 @@ bool Json::is_object() const
 
 Json::Json(const std::string &string)
 {
-    *this = std::move(*JsonParser::parse(string));
+    std::unique_ptr<Json> result{JsonParser::parse(string)};
+    *this = std::move(*result);
 }
 
 Json::~Json()
