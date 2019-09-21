@@ -41,9 +41,17 @@ JsonParser::ejectString(std::string::const_iterator &iterator, const std::string
     } while (*(stringEnd - 1) == '\\');
 
     std::string result(stringStart, stringEnd);
-    boost::replace_all(result, "\\\\", "\\");
-    boost::replace_all(result, "\\\"", "\"");
-    boost::replace_all(result, "\\\'", "\'");
+
+    static const std::unordered_map<std::string, std::string> toReplace = {
+        {"\\\\", "\\"},
+        {"\\\"", "\""},
+        {"\\\'", "\'"},
+        {"\\n", "\n"},
+        {"\\t", "\t"},
+    };
+    for (const auto &pair : toReplace) {
+        boost::replace_all(result, pair.first, pair.second);
+    }
 
     return result;
 }
@@ -74,7 +82,7 @@ JsonParser::ejectNumber(std::string::const_iterator &iterator, const std::string
 std::optional<std::any>
 JsonParser::ejectKeyword(std::string::const_iterator &iterator, const std::string::const_iterator &end)
 {
-    static std::unordered_map<std::string, std::any> results = {
+    static const std::unordered_map<std::string, std::any> results = {
         {"true", static_cast<bool>(true)},
         {"false", static_cast<bool>(false)},
         {"null", std::any{}},
