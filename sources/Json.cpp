@@ -19,7 +19,7 @@ Json &Json::operator=(const Json &json)
         for (const auto &pair: *json.objectData) {
             if (pair.second.type() == typeid(Json *)) {
                 auto &oldJson = *std::any_cast<Json *>(pair.second);
-                (*this->objectData)[pair.first] = new Json(oldJson);
+                static_cast<ObjectType &>(*this->objectData)[pair.first] = new Json(oldJson);
             } else {
                 (*this->objectData)[pair.first] = pair.second;
             }
