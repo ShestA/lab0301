@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "JsonException.h"
+#include "JsonException.hpp"
 
 class Json
 {

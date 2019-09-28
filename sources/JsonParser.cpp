@@ -2,8 +2,8 @@
 #include <functional>
 #include <iostream>
 #include <boost/lexical_cast/bad_lexical_cast.hpp>
-#include "JsonParser.h"
-#include "Utils.h"
+#include "JsonParser.hpp"
+#include "Utils.hpp"
 
 Json *JsonParser::parse(const std::string &string)
 {
@@ -38,7 +38,7 @@ JsonParser::ejectString(std::string::const_iterator &iterator, const std::string
 
         iterator = stringEnd;
         iterator++;
-    } while (*(stringEnd - 1) == '\\');
+    } while (Utils::isCharEscaping(*(stringEnd - 1)));
 
     std::string result(stringStart, stringEnd);
 

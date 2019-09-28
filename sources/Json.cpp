@@ -1,8 +1,8 @@
 #include <stack>
 #include <fstream>
 
-#include "Json.h"
-#include "JsonParser.h"
+#include "Json.hpp"
+#include "JsonParser.hpp"
 
 Json &Json::operator=(const Json &json)
 {

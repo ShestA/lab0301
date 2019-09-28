@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "Json.h"
+#include "Json.hpp"
 
 TEST(JsonObject, EmptyObject)
 {

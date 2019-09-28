@@ -1,8 +1,8 @@
 #include <cstring>
-#include <JsonException.h>
+#include <JsonException.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "Utils.h"
+#include "Utils.hpp"
 
 bool Utils::isCharSpace(char c)
 {
