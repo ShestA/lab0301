@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
-#include <fstream>
 
-#include "Json.h"
+#include "Json.hpp"
 
 TEST(Json, NullJson)
 {

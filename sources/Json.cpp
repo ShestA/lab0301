@@ -1,8 +1,8 @@
 #include <stack>
 #include <fstream>
 
-#include "Json.h"
-#include "JsonParser.h"
+#include "Json.hpp"
+#include "JsonParser.hpp"
 
 Json &Json::operator=(const Json &json)
 {
@@ -13,29 +13,30 @@ Json &Json::operator=(const Json &json)
     this->~Json();
 
     if (json.objectData) {
-        this->objectData = new ObjectType;
+        objectData = new ObjectType;
 
         // Копирование
         for (const auto &pair: *json.objectData) {
             if (pair.second.type() == typeid(Json *)) {
                 auto &oldJson = *std::any_cast<Json *>(pair.second);
-                static_cast<ObjectType &>(*this->objectData)[pair.first] = new Json(oldJson);
+
+                static_cast<ObjectType &>(*objectData)[pair.first] = new Json(oldJson);
             } else {
-                (*this->objectData)[pair.first] = pair.second;
+                (*objectData)[pair.first] = pair.second;
             }
         }
     }
     if (json.arrayData) {
-        this->arrayData = new ArrayType;
-        this->arrayData->reserve(json.arrayData->size());
+        arrayData = new ArrayType;
+        arrayData->reserve(json.arrayData->size());
 
         // Копирование
         for (const std::any &value: *json.arrayData) {
             if (value.type() == typeid(Json *)) {
                 auto &oldJson = *std::any_cast<Json *>(value);
-                this->arrayData->emplace_back(new Json(oldJson));
+                arrayData->emplace_back(new Json(oldJson));
             } else {
-                this->arrayData->push_back(value);
+                arrayData->push_back(value);
             }
         }
     }
@@ -51,8 +52,8 @@ Json &Json::operator=(Json &&json) noexcept
 
     this->~Json();
 
-    this->objectData = json.objectData;
-    this->arrayData = json.arrayData;
+    objectData = json.objectData;
+    arrayData = json.arrayData;
     json.objectData = nullptr;
     json.arrayData = nullptr;
 
